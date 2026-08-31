@@ -1,0 +1,8 @@
+{
+  "_comment": "Synthetic watchlist. example.com is IANA's reserved documentation domain, so this runs safely without touching a real business. The second target 404s on purpose, to show that a dead product page is reported as news rather than swallowed.",
+  "delayMs": 2000,
+  "targets": [
+    { "name": "Sample Competitor, homepage", "url": "https://example.com/" },
+    { "name": "Sample Competitor, discontinued line", "url": "https://example.com/no-such-page" }
+  ]
+}
