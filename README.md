@@ -29,8 +29,11 @@ This is the part worth reading.
 pretending to be a signed-in customer. It fetches pages any visitor can see.
 
 **It respects `robots.txt`.** Fetched once per host per run, cached, and honoured.
-A disallowed path is reported as skipped, not quietly fetched anyway. A page
-being technically reachable is not the same as being welcome.
+A group addressed to this tracker by name takes precedence over the `*` group,
+`Allow` and wildcards are understood, and the most specific rule wins. If
+`robots.txt` itself returns a server error, the site is treated as off limits
+for that run. A disallowed path is reported as skipped, not quietly fetched
+anyway. A page being technically reachable is not the same as being welcome.
 
 **It identifies itself.** The user agent is
 `kaellastudio-competitor-tracker/1.0` with a contact URL, not a copy-pasted
@@ -58,10 +61,14 @@ reads differently from a discontinued one.
 
 **A 404 is news, not an error to swallow.** A product page that stopped
 resolving usually means a line was discontinued, which is the sort of thing
-worth knowing before your client asks.
+worth knowing before your client asks. It counts as a change and is reported
+once, on the run where it happens, and again if the page comes back.
 
-**One unreachable site does not abort the run.** It is reported and the rest
-continue.
+**One unreachable site does not abort the run.** A server error, a refused
+connection, or a site that never answers (20 second timeout) is reported and
+the rest continue. The last good snapshot is kept, so a temporary outage does
+not show up as a false change afterwards. If any page could not be checked,
+the process exits with code 1, so a scheduler can flag it.
 
 **Extraction is deliberately crude.** Regex over HTML is the wrong tool for
 parsing a document and the right one for answering "did the headline change".
