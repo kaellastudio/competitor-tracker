@@ -1,86 +1,85 @@
 # Competitor tracker
 
-Watches a list of public competitor pages and tells you what actually changed
-since last time. Prices, headline, meta description, and whether a page has
-quietly disappeared.
+Clients often ask me "what are the other brands doing?", usually the week
+after a competitor quietly dropped their prices. This tool checks a list of
+competitors' public pages and tells you what changed since the last check:
+prices, headlines, descriptions, and pages that have disappeared.
 
-No dependencies, no API keys, no account. One file of Node.
+It's one file of Node with no dependencies, no API keys and no account.
 
-Built by [Kaella Studio](https://kaellastudio.com).
-
-## Run it
+## Running it
 
 ```sh
 node src/track.mjs --config sample-data/watchlist.json
 ```
 
-First run records a baseline and reports everything as *first seen*. Every run
-after that reports only the differences. State lives in `.state/snapshots.json`,
-which is gitignored, so your watchlist stays yours.
+The first run takes a snapshot and lists every page as *first seen*. After
+that, each run only reports what's different. Snapshots are saved in
+`.state/snapshots.json`, which git ignores, so your watchlist stays on your
+machine.
 
-Point it at your own list by copying `sample-data/watchlist.json` and editing
-the targets.
+To track your own list, copy `sample-data/watchlist.json` and edit the
+targets.
 
-## What it will not do
+## How it behaves
 
-This is the part worth reading.
+I wanted this to be something I'd be comfortable with if I were on the other
+side of it, so it's deliberately polite.
 
-**It does not log in anywhere.** No session cookies, no stored credentials, no
-pretending to be a signed-in customer. It fetches pages any visitor can see.
+It only fetches pages anyone could open in a browser. It never logs in,
+never uses cookies or saved passwords, and never pretends to be a signed-in
+customer.
 
-**It respects `robots.txt`.** Fetched once per host per run, cached, and honoured.
-A group addressed to this tracker by name takes precedence over the `*` group,
-`Allow` and wildcards are understood, and the most specific rule wins. If
-`robots.txt` itself returns a server error, the site is treated as off limits
-for that run. A disallowed path is reported as skipped, not quietly fetched
-anyway. A page being technically reachable is not the same as being welcome.
+It reads each site's `robots.txt` once per run and follows it. A group
+written for this tracker by name takes priority over the general `*` group,
+`Allow` lines and wildcards are understood, and the most specific rule wins.
+If `robots.txt` itself returns a server error, the whole site is skipped for
+that run. Skipped pages are listed as skipped, not quietly fetched anyway.
 
-**It identifies itself.** The user agent is
-`kaellastudio-competitor-tracker/1.0` with a contact URL, not a copy-pasted
-Chrome string. If someone wants it to stop, they can see who to ask.
+It says who it is. The user agent is `kaellastudio-competitor-tracker/1.0`
+with a contact link, not a copied Chrome string, so a site owner who wants it
+to stop knows who to ask.
 
-**It waits between requests.** Two seconds by default, one request at a time.
-A tracker that hammers a small shop's server gets the IP blocked, and deserves
-to.
+It goes slowly: one request at a time, two seconds apart by default. Hammering
+a small shop's server is a good way to get blocked, and fair enough.
 
-**It does not touch Instagram, Faire, or anything else behind a login.** Both
-prohibit scraping in their terms, whatever a tutorial told you. If a signal
-only exists behind a login, this tool does not have it, and says so by not
-having it.
+It doesn't touch Instagram, Faire, or anything else that needs a login. Both
+forbid scraping in their terms. If a signal only exists behind a login, this
+tool simply doesn't have it.
 
-## Details that stop it being noise
+## Keeping the report readable
 
-**A body-text change is only reported when nothing more specific fired.**
-Otherwise a rotating testimonial or a "12 people are viewing this" counter
-means every page reports "something changed" on every run, and you stop
-reading the report. The specific fields are the signal; the body hash is the
-fallback.
+A change in the page's body text is only reported when nothing more specific
+changed. Otherwise a rotating testimonial or a "12 people are viewing this"
+counter would make every page look different on every run, and nobody would
+read the report after the first week.
 
-**Prices are diffed as a set, added and removed separately**, so a new tier
-reads differently from a discontinued one.
+Prices are compared as a set, with additions and removals listed separately,
+so a new tier reads differently from a discontinued one.
 
-**A 404 is news, not an error to swallow.** A product page that stopped
-resolving usually means a line was discontinued, which is the sort of thing
-worth knowing before your client asks. It counts as a change and is reported
-once, on the run where it happens, and again if the page comes back.
+A page that starts returning 404 is reported as a change, because a product
+page going missing usually means a line was discontinued. That's worth
+knowing before a client asks. It's reported once, on the run where it
+happens, and again if the page comes back.
 
-**One unreachable site does not abort the run.** A server error, a refused
-connection, or a site that never answers (20 second timeout) is reported and
-the rest continue. The last good snapshot is kept, so a temporary outage does
-not show up as a false change afterwards. If any page could not be checked,
-the process exits with code 1, so a scheduler can flag it.
+One unreachable site doesn't stop the run. A server error, a refused
+connection, or a site that never answers (there's a 20-second timeout) is
+reported, and the rest carry on. The last good snapshot is kept, so a site
+being down for an afternoon doesn't show up as a false change later. If any
+page couldn't be checked, the script exits with code 1 so a scheduler can
+flag it.
 
-**Extraction is deliberately crude.** Regex over HTML is the wrong tool for
-parsing a document and the right one for answering "did the headline change".
-It is honest about being a change detector rather than a scraper.
+The extraction is crude on purpose. Pulling things out of HTML with regular
+expressions is the wrong way to parse a page, but it's fine for "did the
+headline change", which is all this needs to know.
 
 ## Limits
 
-It reads server-rendered HTML. A storefront that renders its prices in
-JavaScript after load will show as unchanged, because the price is not in the
-document this fetches. Shopify and most small-brand sites are fine. A heavy
-React storefront is not, and you would need a headless browser for that, which
-is a different tool with different manners.
+It reads the HTML the server sends. If a shop fills in its prices with
+JavaScript after the page loads, those prices aren't in what this fetches,
+and the page will look unchanged. Shopify and most small-brand sites are
+fine. A heavy React storefront isn't, and would need a headless browser,
+which is a different tool with different manners.
 
 ## Licence
 
